@@ -1,7 +1,10 @@
 # Table of Contents
 -[Table of Contents](#table-of-contents)
+
 -[Overview](#overview)
+
 -[API](#API)
+
 -[How to Build](#how-to-build)
 
 
@@ -32,3 +35,46 @@ Understanding of pthread APIs first and implement the same in the example to get
 3. Use ctrl+shitf+b to build the default task
 4. main.bin file would be generated and use terminal to run the same - ./main.bin > test.txt
 5. Open the test.txt to see the printf debug logs for further analysis
+
+# Sequence Diagram - Design
+
+@startuml
+participant main as main
+participant thread_handler as thr
+participant thread1 as thr1
+participant thread2 as thr2
+
+
+activate main
+activate thr
+main -> thr: threadhandler_CreateThread(any_threads)
+thr ---> thr1
+activate thr1
+thr1 -> thr1 : executeItself()
+thr ---> thr2
+activate thr2
+thr2 -> thr2 : executeItself()
+...
+main -> thr: threadhandler_CancelThread(thr2)
+thr->thr:pthread_cancel(thr2)
+thr -> thr2 : deactiveThread()
+
+alt #LightGreen State == CANCEL_DISABLED 
+thr2 -> thr2 : executeThread()
+thr2 -> thr2 : pthread_testcancel()
+thr2 -> main : Return(cancelled)
+
+else #Pink state == CANCEL_ENABLED
+thr2 -> thr2 : TerminateThread
+thr2 -> main : Return(cancelled)
+end
+Deactivate thr2
+
+thr1 -> thr1 : executeThread
+thr1 -> main : Return(noError)
+Deactivate thr1
+
+main -> main : printfIfAny()
+main -> main :return
+Deactivate main
+@enduml
